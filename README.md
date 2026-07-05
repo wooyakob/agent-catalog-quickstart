@@ -2,6 +2,18 @@
 
 This repository provides a quickstart guide for using the Agent Catalog with Capella Model Services and Couchbase.
 
+Each example is built around a real industry scenario — not a toy demo — so you can see exactly which business problem the pattern solves, how it works, and what impact it delivers before adapting it to your own domain.
+
+## Examples at a Glance
+
+| Example | Industry | Use Case | Framework | Business Impact |
+|---|---|---|---|---|
+| ✈️ **Flight Search & Booking Agent** (`notebooks/flight_search_agent_langraph/`) | Airlines & Online Travel | Self-service booking assistant that searches routes, creates and retrieves bookings, and answers questions from airline reviews | LangGraph | Deflects routine booking calls from contact centers, shortens time-to-book, and keeps revenue in the direct channel |
+| 🏨 **Hotel Support Agent** (`notebooks/hotel_search_agent_langchain/`) | Hospitality | Concierge-style hotel discovery over unstructured property data using semantic (vector) search | LangChain | Lifts look-to-book conversion by matching guests to properties by intent ("quiet, near the beach, free breakfast"), not just keywords |
+| 🗺️ **Landmark Discovery Agent** (`notebooks/landmark_search_agent_llamaindex/`) | Tourism & Destination Marketing | Attraction and points-of-interest recommendations grounded in a curated destination catalog | LlamaIndex | Drives engagement and in-destination spend with grounded recommendations instead of hallucinated ones |
+
+All three run on the same foundation — **Agent Catalog** for versioned prompts/tools, **Couchbase** as the data platform and vector store, and **Arize Phoenix** for evaluation — so the pattern you learn in one industry transfers directly to yours. Full details for each example are under [Per-Agent Details](#per-agent-details), and the mapping to other industries is under [Adapting These Patterns to Your Industry](#adapting-these-patterns-to-your-industry).
+
 ## Prerequisites
 
 - Python 3.12+
@@ -100,25 +112,80 @@ git submodule status
 
 ## Per-Agent Details
 
-Each example is independent and includes code, prompts, tools, and evals.
+Each example is independent and includes code, prompts, tools, and evals. Each one targets a specific industry scenario so you can map it directly onto an equivalent problem in your own business.
 
-### 🛩️ Flight Search Agent (`notebooks/flight_search_agent_langraph/`)
+### ✈️ Flight Search & Booking Agent (`notebooks/flight_search_agent_langraph/`)
 
-- Framework: LangGraph
-- Install: `poetry -C notebooks/flight_search_agent_langraph install --no-root`
-- Run: `poetry -C notebooks/flight_search_agent_langraph run python main.py`
+**Industry:** Airlines & Online Travel Agencies (OTAs)
+
+**Use case:** A customer-facing booking assistant. Travelers ask in plain language and the agent looks up routes between airports (SQL++ over Couchbase), creates and retrieves bookings, and answers "what's this airline like?" questions using semantic search over airline reviews.
+
+**Try queries like:**
+
+- `"Find flights from JFK to LAX"`
+- `"Book a flight from SFO to ATL tomorrow for 2 passengers"`
+- `"Show me my current bookings"`
+- `"What do passengers say about SpiceJet's service?"`
+
+**What it demonstrates:** A multi-tool LangGraph agent where every tool (`lookup_flight_info`, `save_flight_booking`, `retrieve_flight_bookings`, `search_airline_reviews`) and prompt is versioned and discovered through Agent Catalog — combining structured SQL++ queries, transactional writes, and vector search in one agent.
+
+**Business impact:**
+
+- **Lower cost-to-serve** — route lookups, booking creation, and "where's my booking?" requests are among the highest-volume contact-center drivers for airlines; each conversation the agent completes is an agent-handled call or chat that never reaches a human.
+- **More direct-channel revenue** — a 24/7 conversational booking path shortens time-to-book and keeps customers on your property instead of a metasearch site.
+- **Higher trust in answers** — review questions are answered from your own review corpus via vector search, not from the LLM's memory, which is what makes the assistant safe to put in front of customers.
 
 ### 🏨 Hotel Support Agent (`notebooks/hotel_search_agent_langchain/`)
 
-- Framework: LangChain
-- Install: `poetry -C notebooks/hotel_search_agent_langchain install --no-root`
-- Run: `poetry -C notebooks/hotel_search_agent_langchain run python main.py`
+**Industry:** Hospitality & Accommodation Booking
 
-### 🗺️ Landmark Search Agent (`notebooks/landmark_search_agent_llamaindex/`)
+**Use case:** A concierge-style discovery assistant. Guests describe what they want the way they'd tell a person — location, vibe, amenities — and the agent runs semantic vector search over real hotel data (`travel-sample.inventory.hotel`) to surface properties that match the *intent*, not just the keywords.
 
-- Framework: LlamaIndex
-- Install: `poetry -C notebooks/landmark_search_agent_llamaindex install --no-root`
-- Run: `poetry -C notebooks/landmark_search_agent_llamaindex run python main.py`
+**Try queries like:**
+
+- `"Find me a hotel in San Francisco"`
+- `"Find hotels in Paris with free breakfast"`
+- `"Somewhere quiet near the beach with parking"`
+
+**What it demonstrates:** A LangChain agent with an Agent Catalog-managed vector search tool (`search_vector_database`) over Couchbase, using Capella Model Services or OpenAI embeddings — the core retrieval pattern behind every "help me find the right product" experience.
+
+**Business impact:**
+
+- **Higher look-to-book conversion** — keyword search returns "no results" or noise when guests search the way they speak; semantic search turns those failed searches into qualified matches.
+- **Fewer pre-booking support contacts** — amenity and location questions ("does it have parking?", "is it walkable to downtown?") get answered in the discovery flow instead of via email or phone.
+- **Better inventory utilization** — properties that don't match popular keywords still surface when they genuinely fit a guest's described need.
+
+### 🗺️ Landmark Discovery Agent (`notebooks/landmark_search_agent_llamaindex/`)
+
+**Industry:** Tourism Boards, Destination Marketing & Travel Media
+
+**Use case:** An attraction-recommendation assistant. Visitors ask for things to see and do, and the agent answers with semantic search over a curated landmark catalog (`travel-sample.inventory.landmark`) — museums, monuments, parks, and points of interest — so every recommendation is grounded in your destination data.
+
+**Try queries like:**
+
+- `"Find me landmarks in Tokyo"`
+- `"Show me museums in London"`
+- `"Historic sites within walking distance of the old town"`
+
+**What it demonstrates:** A LlamaIndex ReAct agent with an Agent Catalog-managed semantic search tool (`search_landmarks`) — the retrieval-augmented recommendation pattern for any curated content catalog.
+
+**Business impact:**
+
+- **Grounded, brand-safe recommendations** — the agent recommends only what's in your catalog, eliminating the hallucinated or outdated suggestions that erode traveler trust in generic chatbots.
+- **More engagement and in-destination spend** — personalized itinerary-style discovery keeps visitors exploring (and booking) instead of bouncing to a search engine.
+- **Content ROI** — destination content you already maintain becomes an interactive product instead of static pages.
+
+## Adapting These Patterns to Your Industry
+
+The examples use travel data because it ships with Couchbase (`travel-sample`), but each one is an industry-agnostic pattern. Swap the data, prompts, and tools — the Agent Catalog workflow (`agentc init` → `index` → `publish`) stays identical.
+
+| Pattern (example) | Financial Services | Healthcare | Retail & E-commerce | Manufacturing & Logistics |
+|---|---|---|---|---|
+| **Transactional multi-tool agent** (flight booking) | Order status, payments, and account-servicing assistant — deflects tier-1 banking calls | Appointment scheduling and prescription-refill assistant — cuts no-shows and front-desk load | Order tracking, returns, and exchange agent — lowers cost per support ticket | Shipment booking and track-and-trace agent — reduces "where is my order?" escalations |
+| **Semantic product discovery** (hotel search) | Fund/product finder matched to stated goals and risk appetite — improves qualified lead rate | Provider/specialist finder by symptoms, insurance, and location — speeds patient access | Natural-language product search ("waterproof jacket for spring hiking") — recovers failed keyword searches as sales | Parts and equipment finder by described function — shortens procurement cycles |
+| **Curated-catalog recommendations** (landmark discovery) | Grounded research/insights assistant over your published analyses — scales advisor reach safely | Patient-education assistant over approved clinical content — safe answers, fewer nurse-line calls | Grounded gift/style recommendations from your catalog — raises average order value | Grounded maintenance and troubleshooting guidance from service manuals — less machine downtime |
+
+To build your own: start from the example closest to your use case, replace the `data/` loaders with your collections, edit the `prompts/` and `tools/` (starter files live in the `templates/` directory — see the Templates section below), then re-run `agentc index` and `agentc publish`. The [Adding New Agents](#adding-new-agents) section covers the full workflow.
 
 ## Environment Configuration
 
@@ -140,9 +207,23 @@ For complete environment configuration examples (Capella vs Local), see **[TROUB
 
 ## Usage
 
+Each agent starts an interactive demo — type your queries at the prompt (`quit` to exit):
+
 ```bash
-# run with a query
-poetry -C notebooks/hotel_search_agent_langchain run python main.py "Find hotels in Paris with free breakfast"
+# Airlines / OTA: search routes, book flights, check airline reviews
+poetry -C notebooks/flight_search_agent_langraph run python main.py
+# then try: "Find flights from JFK to LAX" or "Show me my current bookings"
+
+# Hospitality: intent-based hotel discovery
+poetry -C notebooks/hotel_search_agent_langchain run python main.py
+# then try: "Find hotels in Paris with free breakfast"
+
+# Tourism / destination marketing: grounded attraction recommendations
+poetry -C notebooks/landmark_search_agent_llamaindex run python main.py
+# then try: "Show me museums in London"
+
+# run the built-in test suite for an agent
+poetry -C notebooks/hotel_search_agent_langchain run python main.py test
 
 # run evaluations (Arize)
 poetry -C notebooks/hotel_search_agent_langchain run python evals/eval_arize.py
@@ -165,8 +246,9 @@ agentc index .
 git add . && git commit -m "Your changes"
 agentc publish
 
-# Run the agent
-python main.py "Find hotels in Paris with free breakfast"
+# Run the agent (interactive demo)
+python main.py
+# then try: "Find hotels in Paris with free breakfast"
 ```
 
 ## Agent Catalog CLI Commands
